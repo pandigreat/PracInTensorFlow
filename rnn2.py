@@ -56,7 +56,7 @@ def gen_batch(raw_data, batch_size, num_steps):
 	epoch_size = batch_partition_length / num_steps
 	
 	 #x是0-num_steps， batch_partition_length -batch_partition_length +num_steps。。。共batch_size个
-	 for i in range(epoch_size):
+	for i in range(epoch_size):
 		x = data_x[:, i*num_steps:(i+1)*num_steps]
 		y = data_y[:, i*num_steps:(i+1)*num_steps]
 		yield (x, y)
@@ -87,14 +87,14 @@ rnn_inputs = tf.unstack(x_one_hot, axis=1)
 
 #定义rnn_cell的权重参数，
 with tf.variable_scope('rnn_cell'):
-"""由于tf.Variable() 每次都在创建新对象，所有reuse=True 和它并没有什么关系。对于get_variable()，来说，如果已经创建的变量对象，就把那个对象返回，如果没有创建变量对象的话，就创建一个新的。"""
+	"""由于tf.Variable() 每次都在创建新对象，所有reuse=True 和它并没有什么关系。对于get_variable()，来说，如果已经创建的变量对象，就把那个对象返回，如果没有创建变量对象的话，就创建一个新的。"""
 	W = tf.get_variable('W', [num_classes+state_size, state_size])
-	b = tf.get_variable('b', [state_size], initializer=tf.constant_initialize(0.0))
+	b = tf.get_variable('b', [state_size], initializer=tf.constant_initializer(0.0))
 #使之定义为reuse模式，循环使用，保持参数相同
 def rnn_cell(rnn_input, state):
 	with tf.variable_scope('rnn_cell', reuse=True):
 		W = tf.get_variable('W', [num_classes+state_size, state_size])
-		b = tf.get_variable('b', [state_size], initializer=tf.constant_initialize(0.0))
+		b = tf.get_variable('b', [state_size], initializer=tf.constant_initializer(0.0))
 	#定义rnn_cell具体的操作，这里使用的是最简单的rnn，不是LSTM
 	return tf.tanh(tf.matmul(tf.concat([rnn_input,state], 1), W) + b)
 
@@ -108,8 +108,8 @@ final_state = rnn_outputs[-1]
 
 #define softmax layer 
 with tf.variable_scope('softmax'):
-	W = tf.get_variable('W', [state_szie,num_classes])
-	b = tf.get_variable('b', [num_classes], initialize=tf.constant_initialize(0.0))
+	W = tf.get_variable('W', [state_size,num_classes])
+	b = tf.get_variable('b', [num_classes], initializer=tf.constant_initializer(0.0))
 
 #注意，这里要将num_steps个输出全部分别进行计算其输出，然后使用softmax预测
 logits = [tf.nn.softmax(rnn_output, W) + b for rnn_output in rnn_outputs]
@@ -127,12 +127,12 @@ def train_network(num_epochs, num_steps, state_size=4, verbose=True):
 	with tf.Session() as sess:
 		sess.run(tf.global_variables_initializer())
 		training_losses = []
-		 #得到数据，因为num_epochs==5，所以外循环只执行五次
-		 for idx, epoch in enumerate(gen_epochs(num_epochs, num_steps)):
+		#得到数据，因为num_epochs==5，所以外循环只执行五次
+		for idx, epoch in enumerate(gen_epochs(num_epochs, num_steps)):
 			training_loss = 0
-			 #保存每次执行后的最后状态，然后赋给下一次执行
-			 training_state = np.zeros((batch_size, state_size))
-			 if verbose:
+			#保存每次执行后的最后状态，然后赋给下一次执行
+			training_state = np.zeros((batch_size, state_size))
+			if verbose:
 				print("\nEpoch", idx)
 			#这是具体获得数据的部分
 			for step, (X, Y) in enumerate(epoch):
