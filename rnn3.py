@@ -46,7 +46,7 @@ y_ = tf.placeholder('float', shape=[None, 10])
 W = tf.get_variable('W', [784, 10], initializer=tf.constant_initializer(1))
 b = tf.get_variable('b', [10], initializer=tf.constant_initializer(1))
 
-y = tf.nn.softmax(tf.matmul(x,W) + b) 
+y = tf.nn.softmax(tf.matmul(x,W) + b)
 cross_entropy = -tf.reduce_mean(y_*tf.log(y))
 
 train_step = tf.train.GradientDescentOptimizer(step).minimize(cross_entropy)
@@ -66,6 +66,7 @@ for i in range(train_loop):
 
 correct_prediction = tf.equal(tf.argmax(y,1), tf.argmax(y_,1))
 accuracy = tf.reduce_mean(tf.cast(correct_prediction, 'float'))
+
 print (sess.run(correct_prediction, feed_dict={x:test_img, y_:test_lb}))
 print (sess.run(accuracy, feed_dict={x:test_img, y_:test_lb}))
 
