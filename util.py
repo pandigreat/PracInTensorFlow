@@ -13,18 +13,37 @@ import chardet
 import time
 
 map_NER = {'LOC':1, 'PER':2, 'ORG':3, 'MISC':4}
-max_sequence_length = 120
+max_sequence_length = 110
 
 def get_key(dic, val):
 	res =  [k for k,v in dic.items() if v == val]
 	return '' if (len(res) == 0) else res[0]
 
+def en_get_key(dic, val):
+	val = val.lower()
+	res = [] 
+	for k, v in dic.items():
+		if isinstance(v, int) or isinstance(v, float):
+			pass
+		else:
+			if v.lower() == val:
+				res.append(k)
+	return '' if (len(res) == 0) else res[0]
+
+def en_find_key(dic, val):
+	val = val.lower()
+	return dic[val] if (val in dic.keys()) else ''
+
+def ch_find_key(dic, val):
+	return dic[val] if (val in dic.keys()) else ''
+
 def readChinsesWordEmbedding(filename):
 	dic = {}
+	dics = {}
 	tup = []
 	i = 1; 
 	with open(filename, 'r', encoding='utf-8',errors='ignore') as fp:
-		lp = fp.readline().
+		lp = fp.readline()
 		for ln in fp: 
 			ln = ln.replace('\n','')
 			#ln.decode('utf-8').encode('gbk')
@@ -32,6 +51,7 @@ def readChinsesWordEmbedding(filename):
 
 			s[0] = s[0].replace('\n', '')
 			dic[i] = s[0].replace(' ', '') 
+			dic[s[0].replace(' ', '')] = i
 			#print(dic[i])
 			tmp_tup = []
 			for j in range(1, len(s)):
@@ -39,27 +59,29 @@ def readChinsesWordEmbedding(filename):
 			i += 1
 			tup.append(tmp_tup) 
 
-	return (dic, tup)
+	return (dic, dics, tup)
 	
 
 def readEnglishWordEmbedding(filename):
 	dic = {}
+	dics = {}
 	tup = []
 	i = 1;
-	with open(filename, 'r') as fp:
+	with open(filename, 'r', encoding='utf-8', errors='ignore') as fp:
 		for ln in fp: 
 			ln = ln.replace('\n','')
 			s = re.split(' ', ln)
 			s[0] = s[0].replace('\n', '')
 			dic[i] = s[0].replace(' ', '') 
+			dics[s[0].replace(' ', '')] = i
 			tmp_tup = []
 			for j in range(1, len(s)):
 				tmp_tup.append(float(s[j]))
 			i += 1
 			tup.append(tmp_tup)
-	return (dic, tup)
+	return (dic, dics, tup)
 	
-def splitChineseSequence(filename, dic):
+def splitChineseSequence(filename, dic, dics):
 	#cutlist = ["，", ",", "！", "……", "!", "？", "?", "；", ";" ]
 	#cutlist = r'\，\,\;\；.\。\?\？\!\！' 
 	cutlist = r'\,|\，|\.|\。|\！|\!|\?|\？|\:|\：'
@@ -91,13 +113,13 @@ def splitChineseSequence(filename, dic):
 	fp.close()
 	return res
 
-def splitEnglishiSeqence(filename, dic):
+def splitEnglishiSeqence(filename, dic, dics):
 	print(filename)
-	cutlist = r'\.|\?|\,|\…'
-	fp = open(filename, 'r')
+	cutlist = r'\.|\?|\,|\…|\:|\;'
+	fp = open(filename, 'r', encoding='utf-8', errors='ignore')
 	strAll = fp.read().replace('\n', '')
 	strAll = strAll.replace('\t', '')
-	col = re.split(cutlist, strALL)
+	col = re.split(cutlist, strAll)
 	res = []
 	for st in col:
 		lins = re.split(' ', st)
@@ -109,7 +131,7 @@ def splitEnglishiSeqence(filename, dic):
 				pro_lins.append(x)
 		for vob in pro_lins:
 			i += 1
-			idx = get_key(dic, vob)
+			idx = en_get_key(dic, vob)
 			if idx == '':
 				continue
 			reslist[i] = idx
@@ -117,7 +139,7 @@ def splitEnglishiSeqence(filename, dic):
 	fp.close()
 	return res
 
-def mapChineseNER(filename, dic, article):
+def mapChineseNER(filename, dic, article, dics):
 	print (filename)
 	res = [[0 for j in range(max_sequence_length)] for i in range(len(article))]
 	map_file = {}
@@ -126,7 +148,7 @@ def mapChineseNER(filename, dic, article):
 			st = st.replace('\n', '')
 			st = re.split('\t', st)
 
-			idx = get_key(dic, st[-1].strip(' ')) 
+			idx = get_key(dic, st[-1].replace(' ', '')) 
 			if idx == '':
 				idx = 0
 			ydx = map_NER[st[1]]
@@ -142,39 +164,44 @@ def mapChineseNER(filename, dic, article):
 						ydx = 0
 					article[i][j] = ydx
 
-
 	return res
 
-def mapEnglishNER(filename, dic, article):
-	print (filename)
+def mapEnglishNER(filename, dic, article, dics):
+	print (filename) 
 	res = [[0 for j in range(max_sequence_length)] for i in range(len(article))]
 	map_file = {}
-	with open(filename, 'r') as fp:
+	with open(filename, 'r', encoding='utf-8', errors='ignore') as fp:
 		for st in fp:
 			st = st.replace('\n', '')
 			st = re.split('\t', st)
-			idx = get_key(dic, st[-1].strip(' '))
+			word_ner = re.split(' ', st[1])
+			idx = en_find_key(dics, st[-1])
+			print('idx', idx, st[-1])
+			#idx = en_get_key(dic, st[-1] ) 
 			if idx == '':
 				idx = 0
-			ydx = map_NER[st[1]]
+			
+			ydx = map_NER[word_ner[0]]
 			map_file[idx] = ydx
+
 		for i in range(len(article)):
 			for j in range(max_sequence_length):
 				if article[i][j] != 0:
 					idx = article[i][j]
+					# print ('idx', idx, dic[idx])
 					if idx in map_file:
 						ydx = map_file[idx]
 					else:
 						ydx = 0
 					article[i][j] = ydx
-
+ 
 	return res
 
 def loadChineseData():
 	path = os.getcwd()
 	word_path = path + "\\" + "Chinese_Embedding.txt"
 	print ("word_path",word_path)
-	dic, word_embedding = readChinsesWordEmbedding(word_path)
+	dic, dics, word_embedding = readChinsesWordEmbedding(word_path)
 
 	data = []
 	data_ner = []
@@ -189,7 +216,7 @@ def loadChineseData():
 
 		elif fn.find("-1.txt") > 0:
 			fn = datasetpath + "\\" + fn 
-			data_ner.append(mapChineseNER(fn, dic, ans))
+			data_ner.append(mapChineseNER(fn, dic, ans, dics))
 
 		else:
 			pass
@@ -198,23 +225,25 @@ def loadChineseData():
 
 def loadEnglishiData():
 	path = os.getcwd()
-	word_path = os.path.join(path, "word_embedding_english.txt")
+	word_path = os.path.join(path, "glove.6B.100d.txt")
 	print('word_path', word_path)
-	dic, word_embedding = readEnglishWordEmbedding(word_path)
+	dic, dics, word_embedding = readEnglishWordEmbedding(word_path)
+
+	
 
 	data = []
 	data_ner = []
 	datasetpath = os.path.join(path, "english_data")
-	filenameList = os.listdir(path)
+	print(datasetpath)
+	filenameList = os.listdir(datasetpath)
 	filenameList.sort(reverse=True)
 	for fn in filenameList:
-		if fn.find("-3.txt") > 0:
+		if fn.find("txt") > 0:
 			fn = os.path.join(datasetpath, fn)
-			ans = splitEnglishSequence(fn, dic)
-			data.append(ans)
-		elif fn.find("-1.txt") > 0:
+			ans = splitEnglishiSeqence(fn, dic, dics) 
+		elif fn.find("ann") > 0:
 			fn = os.path.join(datasetpath, fn)
-			data_ner.append(mapEnglishNER(fn, map_NER, ans))
+			data_ner.append(mapEnglishNER(fn, dic, ans, dics))
 		else:
 			pass
 	return (data, data_ner, word_embedding)
@@ -252,6 +281,7 @@ if __name__ == '__main__':
 	#(data, data_ner, word_embedding) = loadChineseData()  
 	#print (data)
 	(data, data_ner, word_embedding) = loadEnglishiData()
+
 	print (data)
 	time.sleep(10)
 

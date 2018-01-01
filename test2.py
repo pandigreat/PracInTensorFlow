@@ -8,8 +8,6 @@ import struct
 import jieba
 import re
 
-res = '0.222\n'
-res = (float)(res) + 1
-print(res )
-
+res = {'2':1}
+print('2' in res.keys())
 
