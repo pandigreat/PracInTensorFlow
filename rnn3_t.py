@@ -51,7 +51,6 @@ b = tf.get_variable('b', [10], initializer=tf.constant_initializer(30))
 y = tf.nn.softmax(tf.matmul(x,W) + b) 
 #cross_entropy = -tf.reduce_mean(y_*tf.log(y))
 #cross_entropy = tf.reduce_mean( -tf.reduce_sum(y_*tf.log(y), reduction_indices=[1]))
-
 #cross_entropy = -tf.reduce_sum(y_*tf.log(y_conv))
 cross_entropy = -tf.reduce_mean(y_*tf.log(tf.clip_by_value(y,1e-10,1.0)))
 
