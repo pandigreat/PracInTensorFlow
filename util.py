@@ -13,8 +13,8 @@ import chardet
 import time
 
 map_NER = {'LOC':1, 'PER':2, 'ORG':3, 'MISC':4}
-max_sequence_length = 125
-max_sequence_num = 200
+max_sequence_length = 110
+max_sequence_num = 210
 
 def get_key(dic, val):
 	res =  [k for k,v in dic.items() if v == val]
@@ -253,8 +253,8 @@ def DivideDataSet(dataset, nerdata):
 	test_set = []
 	train_lb = []
 	test_lb = []
-	max_sequence_num = 200
-	n = random.randint(2, 7)
+	max_sequence_num = 210
+	n = random.randint(3, 7)
 	#dataset = np.array(dataset)
 	#nerdata = np.array(nerdata)
 	for i in range(batch_size):
@@ -275,12 +275,12 @@ def DivideDataSet(dataset, nerdata):
 		
 		batch = np.reshape(batch, (-1, max_sequence_length))
 		batch_ner = np.reshape(batch_ner, (-1, max_sequence_length))	
-
-		test_set.append(batch)
-		test_lb.append(batch_ner)
-
-		train_set.append(batch)
-		train_lb.append(batch_ner)
+		if i % n == 0:
+			test_set.append(batch)
+			test_lb.append(batch_ner)
+		else:
+			train_set.append(batch)
+			train_lb.append(batch_ner)
 	# for i in range(len(test_set)):
 	# 	size =max_sequence_num - len(test_set[0])
 	# 	for j in range(size):
@@ -300,7 +300,7 @@ if __name__ == '__main__':
 	#print (data)
 	(data, data_ner, word_embedding) = loadChineseData()
 	(batch_size, max_sequence_num, train_set, train_lb, test_set, test_lb) = DivideDataSet(data, data_ner)
-	# for i in range(len(train_set)):
-	# 	print ('i:', i,  len(train_set[i]), len(train_lb[i][1]))
+	for i in range(len(train_set)):
+	 	print ('i:', i,  len(train_set[i]), len(train_lb[i][1]))
 
 
