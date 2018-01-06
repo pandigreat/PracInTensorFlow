@@ -77,9 +77,6 @@ for i in range(100001):
 		sess.run(train_step, feed_dict={x:batch_img, y_:batch_lb})
 
 
- 
-
-
 correct_prediction = tf.equal(tf.argmax(y,1), tf.argmax(y_,1))
 
 accuracy = tf.reduce_mean(tf.cast(correct_prediction, 'float'))

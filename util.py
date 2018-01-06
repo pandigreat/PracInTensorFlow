@@ -53,14 +53,14 @@ def readChinsesWordEmbedding(filename):
 
 			s[0] = s[0].replace('\n', '')
 			dic[i] = s[0].replace(' ', '') 
-			dic[s[0].replace(' ', '')] = i
+			dics[s[0].replace(' ', '')] = i
 			#print(dic[i])
 			tmp_tup = []
 			for j in range(1, len(s)): 
 				tmp_tup.append(float(s[j]))
 			i += 1
 			tup.append(tmp_tup) 
-
+	#print(dics, dic)
 	return (dic, dics, tup)
 	
 
@@ -95,6 +95,7 @@ def splitChineseSequence(filename, dic, dics):
 	for st in col: 
 		lins = re.split(' ', st) 
 		reslist = [0 for i in range(max_sequence_length)]
+
 		pro_lins = []
 		for x in lins:
 			if x != '':
@@ -105,13 +106,14 @@ def splitChineseSequence(filename, dic, dics):
 			# 	print(len(pro_lins))
 			i = i + 1
 			idx = ch_find_key(dics, vob)
+ 
 			#idx = get_key(dic, vob)
 			if idx == '':
 				continue
 			reslist[i] = idx
 			
 		res.append(reslist)
-
+ 
 	fp.close()
 	return res
 
@@ -148,8 +150,8 @@ def mapChineseNER(filename, dic, article, dics):
 			st = st.replace('\n', '')
 			st = re.split('\t', st)
 
-			idx = en_find_key(dics, st[-1])
-			#idx = get_key(dic, st[-1].replace(' ', '')) 
+			#idx = en_find_key(dics, st[-1])
+			idx = get_key(dic, st[-1].replace(' ', '')) 
 			if idx == '':
 				idx = 0
 			ydx = map_NER[st[1]]
@@ -163,8 +165,7 @@ def mapChineseNER(filename, dic, article, dics):
 						ydx = map_file[idx]
 					else:
 						ydx = 0
-					article[i][j] = ydx
-
+					res[i][j] = ydx 
 	return res
 
 def mapEnglishNER(filename, dic, article, dics): 
@@ -199,7 +200,7 @@ def loadChineseData():
 	path = os.getcwd()
 	word_path = path + "\\" + "Chinese_Embedding.txt" 
 	dic, dics, word_embedding = readChinsesWordEmbedding(word_path)
-
+	ans = 0
 	data = []
 	data_ner = []
 	datasetpath = path + "\\" + "chinese_data"
@@ -210,10 +211,11 @@ def loadChineseData():
 			fn = datasetpath + "\\" + fn 
 			ans = splitChineseSequence(fn, dic, dics)
 			data.append(ans)
-
+ 
 		elif fn.find("-1.txt") > 0:
 			fn = datasetpath + "\\" + fn 
-			data_ner.append(mapChineseNER(fn, dic, ans, dics))
+			v = mapChineseNER(fn, dic, ans, dics)
+			data_ner.append(v)
 
 		else:
 			pass
@@ -300,6 +302,7 @@ if __name__ == '__main__':
 	#print (data)
 	(data, data_ner, word_embedding) = loadChineseData()
 	(batch_size, max_sequence_num, train_set, train_lb, test_set, test_lb) = DivideDataSet(data, data_ner)
+ 
 	for i in range(len(train_set)):
 	 	print ('i:', i,  len(train_set[i]), len(train_lb[i][1]))
 
